@@ -33,15 +33,18 @@ if show == 'Amount of content produced per Country':
     # Get the json countries url in order to display the map.
     country_json = alt.topo_feature(data.world_110m.url, 'countries')
 
-    
+    countries_excluded = st.multiselect('What countries would you like to exclude?', df_countries_count['country'], key='choropleth')
+    if len(countries_excluded) != 0:
+        df_countries_count = df_countries_count[~df_countries_count['country'].isin(countries_excluded)]
     # Display a world map of the data for the first visualization.
     # Based on Amount of etflix content produced per country.
 
     netflix_map = alt.Chart(country_json).mark_geoshape().encode(
         color='count:Q',
+        tooltip=['country:N', 'count:Q']
     ).transform_lookup(
         lookup='id',
-        from_=alt.LookupData(df_countries_count, 'id', ['count'])
+        from_=alt.LookupData(df_countries_count, 'id', ['count', 'country'])
     ).project(
         type='equirectangular'
     ).properties(
@@ -127,15 +130,29 @@ if show == 'genres':
 
 if show == 'sentiment':
     
-    
-    avg_sent = avg_sent[avg_sent['Year'] >= 1980]
-    fear = alt.Chart(avg_sent).mark_line().encode(x='Year',y='Fear', color=alt.value("black"))
-    happy = alt.Chart(avg_sent).mark_line().encode(x='Year',y='Happy',color=alt.value("yellow"))
-    sad = alt.Chart(avg_sent).mark_line().encode(x='Year',y='Sad',color=alt.value("blue"))
-    surprise = alt.Chart(avg_sent).mark_line().encode(x='Year',y='Surprise',color=alt.value("green"))
-    angry = alt.Chart(avg_sent).mark_line().encode(x='Year',y='Angry',color=alt.value("red"))
+    cols = ['Fear', 'Happy', 'Sad', 'Surprise', 'Angry']
+    option = st.multiselect('What emotions do you want to display?', cols)
 
-    sentiment = alt.layer(fear, happy, sad, angry, surprise)
+    avg_sent = avg_sent[avg_sent['Year'] >= 1980]
+    chart_options = []
+
+    if 'Fear' in option:
+        fear = alt.Chart(avg_sent).mark_line().encode(x='Year',y='Fear', color=alt.value("orange"))
+        chart_options.append(fear)
+    if 'Happy' in option:
+        happy = alt.Chart(avg_sent).mark_line().encode(x='Year',y='Happy',color=alt.value("yellow"))
+        chart_options.append(happy)
+    if 'Sad' in option:
+        sad = alt.Chart(avg_sent).mark_line().encode(x='Year',y='Sad',color=alt.value("blue"))
+        chart_options.append(sad)
+    if 'Surprise' in option:
+        surprise = alt.Chart(avg_sent).mark_line().encode(x='Year',y='Surprise',color=alt.value("green"))
+        chart_options.append(surprise)
+    if 'Angry' in option:
+        angry = alt.Chart(avg_sent).mark_line().encode(x='Year',y='Angry',color=alt.value("red"))
+        chart_options.append(angry)
+
+    sentiment = alt.layer(*chart_options)
 
     st.write(sentiment)
 
